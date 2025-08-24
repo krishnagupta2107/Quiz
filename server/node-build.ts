@@ -5,12 +5,35 @@ import * as express from "express";
 const app = createServer();
 const port = process.env.PORT || 3000;
 
+// Add health check endpoint
+app.get("/health", (req, res) => {
+  res.json({ 
+    status: "healthy", 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development"
+  });
+});
+
 // In production, serve the built SPA files
 const __dirname = import.meta.dirname;
 const distPath = path.join(__dirname, "../spa");
 
+// Debug logging to help troubleshoot path issues
+console.log("Server build directory:", __dirname);
+console.log("SPA dist path:", distPath);
+console.log("Full SPA path:", path.resolve(distPath));
+
 // Serve static files
 app.use(express.static(distPath));
+
+// Add error handling for static files
+app.use((err, req, res, next) => {
+  if (err) {
+    console.error("Static file serving error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+  next();
+});
 
 // Handle React Router - serve index.html for all non-API routes
 app.get("*", (req, res) => {
@@ -19,7 +42,15 @@ app.get("*", (req, res) => {
     return res.status(404).json({ error: "API endpoint not found" });
   }
 
-  res.sendFile(path.join(distPath, "index.html"));
+  const indexPath = path.join(distPath, "index.html");
+  console.log("Serving index.html from:", indexPath);
+  
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error("Error serving index.html:", err);
+      res.status(500).json({ error: "Failed to serve index.html", details: err.message });
+    }
+  });
 });
 
 app.listen(port, () => {
