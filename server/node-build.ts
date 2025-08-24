@@ -5,6 +5,12 @@ import * as express from "express";
 const app = createServer();
 const port = process.env.PORT || 3000;
 
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
 // Add health check endpoint
 app.get("/health", (req, res) => {
   res.json({ 
@@ -12,6 +18,16 @@ app.get("/health", (req, res) => {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || "development"
   });
+});
+
+// Test endpoint to serve a static file
+app.get("/test-static", (req, res) => {
+  const testFile = path.join(distPath, "favicon.ico");
+  if (fs.existsSync(testFile)) {
+    res.sendFile(testFile);
+  } else {
+    res.status(404).json({ error: "Test file not found", path: testFile });
+  }
 });
 
 // In production, serve the built SPA files
@@ -23,8 +39,29 @@ console.log("Server build directory:", __dirname);
 console.log("SPA dist path:", distPath);
 console.log("Full SPA path:", path.resolve(distPath));
 
+// Check if the SPA directory exists and what's in it
+import fs from "fs";
+try {
+  const spaExists = fs.existsSync(distPath);
+  console.log("SPA directory exists:", spaExists);
+  
+  if (spaExists) {
+    const files = fs.readdirSync(distPath);
+    console.log("Files in SPA directory:", files);
+    
+    const indexPath = path.join(distPath, "index.html");
+    const indexExists = fs.existsSync(indexPath);
+    console.log("index.html exists:", indexExists);
+  }
+} catch (error) {
+  console.error("Error checking SPA directory:", error);
+}
+
 // Serve static files
-app.use(express.static(distPath));
+app.use(express.static(distPath, {
+  index: false, // Don't serve index.html automatically
+  fallthrough: false // Don't fall through to next middleware if file not found
+}));
 
 // Add error handling for static files
 app.use((err, req, res, next) => {
