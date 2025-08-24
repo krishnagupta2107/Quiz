@@ -5,6 +5,9 @@ import * as express from "express";
 const app = createServer();
 const port = process.env.PORT || 3000;
 
+// Set environment for Render
+process.env.NODE_ENV = 'production';
+
 // Add request logging middleware
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
@@ -62,6 +65,9 @@ app.use(express.static(distPath, {
   index: false, // Don't serve index.html automatically
   fallthrough: false // Don't fall through to next middleware if file not found
 }));
+
+// Also serve assets from root path for compatibility
+app.use('/assets', express.static(path.join(distPath, 'assets')));
 
 // Add error handling for static files
 app.use((err, req, res, next) => {
