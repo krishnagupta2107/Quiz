@@ -10,7 +10,15 @@ export function createServer() {
   const app = express();
 
   // Middleware
-  app.use(cors());
+  app.use(cors({
+    origin: [
+      'http://localhost:8080',
+      'http://localhost:8081',
+      'https://quiz-kizi.onrender.com',
+      'https://*.onrender.com'
+    ],
+    credentials: true
+  }));
   app.use(express.json({ limit: '50mb' })); // Increased limit for PDF uploads
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
