@@ -38,8 +38,8 @@ The generated questions are rendered in a simple web form for teachers to **revi
 └── index.html           # Entry point
 ```
 
----**
-To check live demo open this link:**https://cozy-pegasus-6f0cfc.netlify.app/
+---
+**To check live demo open this link:**https://cozy-pegasus-6f0cfc.netlify.app/
 
 ## ⚙️ Setup & Installation
 
