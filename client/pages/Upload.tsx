@@ -214,7 +214,7 @@ export default function UploadPage() {
               <div className="p-3 bg-primary/10 rounded-full">
                 <Sparkles className="h-8 w-8 text-primary" />
               </div>
-              <h1 className="text-4xl font-bold text-foreground">QuizGen</h1>
+              <h1 className="text-4xl font-bold text-foreground">AI Quiz Generator</h1>
             </div>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Transform your PDF chapters into engaging quizzes with AI-powered question generation

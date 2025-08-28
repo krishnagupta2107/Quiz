@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Download, Edit3, CheckCircle, XCircle, FileText, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import jsPDF from "jspdf";
 
 interface Question {
   id: string;
@@ -26,6 +27,7 @@ export default function ReviewPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [editingQuestion, setEditingQuestion] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   useEffect(() => {
     // Get questions from the API response
@@ -81,11 +83,97 @@ export default function ReviewPage() {
     }, 1500);
   };
 
-  const exportToPDF = () => {
-    toast({
-      title: "PDF Export",
-      description: "PDF export functionality would be implemented here.",
-    });
+  const exportToPDF = async () => {
+    setIsExportingPDF(true);
+    
+    try {
+      // Create new PDF document
+      const doc = new jsPDF();
+      
+      // Set title
+      doc.setFontSize(20);
+      doc.setFont("helvetica", "bold");
+      doc.text("AI Quiz Generator - Generated Questions", 20, 30);
+      
+      // Add generation info
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 45);
+      doc.text(`Total Questions: ${questions.length}`, 20, 55);
+      doc.text(`Source Files: ${location.state.files?.length || 0}`, 20, 65);
+      
+      let yPosition = 85;
+      
+      // Add each question
+      questions.forEach((question, index) => {
+        // Check if we need a new page
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+        }
+        
+        // Question header
+        doc.setFontSize(14);
+        doc.setFont("helvetica", "bold");
+        doc.text(`Question ${index + 1}`, 20, yPosition);
+        
+        // Question type and difficulty badges
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.text(`${question.type} • ${question.difficulty}`, 20, yPosition + 8);
+        
+        // Question text
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        const questionLines = doc.splitTextToSize(question.question, 170);
+        doc.text(questionLines, 20, yPosition + 20);
+        
+        yPosition += 25 + (questionLines.length * 5);
+        
+        // Options (for multiple choice)
+        if (question.options && question.options.length > 0) {
+          question.options.forEach((option, optIndex) => {
+            const optionText = `${String.fromCharCode(65 + optIndex)}. ${option}`;
+            doc.text(optionText, 25, yPosition);
+            yPosition += 8;
+          });
+        }
+        
+        // Correct answer
+        doc.setFont("helvetica", "bold");
+        doc.text(`Correct Answer: ${question.correctAnswer}`, 20, yPosition + 5);
+        
+        // Explanation
+        if (question.explanation) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          const explanationLines = doc.splitTextToSize(`Explanation: ${question.explanation}`, 170);
+          doc.text(explanationLines, 20, yPosition + 15);
+          yPosition += 20 + (explanationLines.length * 4);
+        }
+        
+        yPosition += 15;
+      });
+      
+      // Save the PDF
+      const fileName = `quiz-questions-${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+      
+      toast({
+        title: "PDF Export successful",
+        description: "Questions have been exported to PDF successfully.",
+      });
+      
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast({
+        title: "PDF Export failed",
+        description: "There was an error generating the PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExportingPDF(false);
+    }
   };
 
   if (!location.state) {
@@ -106,7 +194,7 @@ export default function ReviewPage() {
               <div>
                 <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
                   <CheckCircle className="h-8 w-8 text-accent" />
-                  Review Questions
+                  Review Generated Questions
                 </h1>
                 <p className="text-muted-foreground">
                   Review and edit your generated questions before export
@@ -114,9 +202,18 @@ export default function ReviewPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={exportToPDF}>
-                <FileText className="h-4 w-4 mr-2" />
-                Export PDF
+              <Button variant="outline" onClick={exportToPDF} disabled={isExportingPDF}>
+                {isExportingPDF ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 mr-2 border-2 border-current border-t-transparent rounded-full" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Export PDF
+                  </>
+                )}
               </Button>
               <Button onClick={exportQuestions} disabled={isExporting}>
                 {isExporting ? (

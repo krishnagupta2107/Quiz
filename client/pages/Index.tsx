@@ -42,7 +42,7 @@ const Index = () => {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-4">QuizGen</h1>
+            <h1 className="text-4xl font-bold text-foreground mb-4">AI Quiz Generator</h1>
             <p className="text-xl text-muted-foreground">
               AI-powered quiz generation from PDF content
             </p>
