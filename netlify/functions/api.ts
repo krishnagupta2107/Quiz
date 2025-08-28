@@ -247,7 +247,7 @@ Make the questions relevant to the actual content provided.`;
             message: "Questions generated successfully using AI",
             aiResponse: text.substring(0, 500) + "..." // Include first 500 chars of AI response
           })
-        });
+        };
         
       } catch (error) {
         console.error('Unexpected error in generate-questions:', error);
