@@ -134,24 +134,42 @@ export default function UploadPage() {
       const processedFiles = await Promise.all(filePromises);
 
       // Call the API to generate questions
+      console.log('Sending request to API with:', {
+        filesCount: processedFiles.length,
+        questionCount: parseInt(questionCount),
+        questionTypes,
+        difficulty,
+        firstFileSize: processedFiles[0]?.length || 0
+      });
+
+      // For debugging, let's try with a smaller payload first
+      const testPayload = {
+        files: processedFiles.slice(0, 1), // Only send first file for testing
+        questionCount: parseInt(questionCount),
+        questionTypes,
+        difficulty,
+      };
+
+      console.log('Test payload size:', JSON.stringify(testPayload).length, 'characters');
+
       const response = await fetch("/api/generate-questions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          files: processedFiles,
-          questionCount: parseInt(questionCount),
-          questionTypes,
-          difficulty,
-        }),
+        body: JSON.stringify(testPayload),
       });
 
+      console.log('Response status:', response.status, response.statusText);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response body:', errorText);
+        
         if (response.status === 413) {
           throw new Error("Files are too large. Please try smaller PDF files (under 10MB each).");
         }
-        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        throw new Error(`Server error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const result = await response.json();

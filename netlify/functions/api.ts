@@ -2,7 +2,7 @@ import type { Handler, HandlerEvent } from "@netlify/functions";
 
 // Export the handler for Netlify
 export const handler: Handler = async (event: HandlerEvent) => {
-  const { httpMethod, path, body } = event;
+  const { httpMethod, path, body, headers } = event;
   
   try {
     // Find matching route
@@ -38,6 +38,24 @@ export const handler: Handler = async (event: HandlerEvent) => {
               correctAnswer: "A"
             }
           ]
+        })
+      };
+    }
+
+    if (route === '/test-simple' && httpMethod === 'POST') {
+      // Simple test endpoint that just echoes back the request
+      return {
+        statusCode: 200,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: "Simple test endpoint working",
+          received: {
+            method: httpMethod,
+            path: path,
+            hasBody: !!body,
+            bodyLength: body ? body.length : 0,
+            contentType: headers['content-type'] || 'not-set'
+          }
         })
       };
     }
