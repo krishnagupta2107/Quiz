@@ -23,9 +23,12 @@ async function makeGeminiRequest(model: any, prompt: string): Promise<string> {
 }
 
 export const handleGenerateQuestions: RequestHandler = async (req, res) => {
+  // Track processing time across both main and fallback paths
+  const startTime = Date.now();
+  // Hoist request payload so it's available to fallback as well
+  const { files, questionCount, questionTypes, difficulty } = (req.body || {}) as GenerateQuestionsRequest;
   try {
     console.log("Question generation request received");
-    const { files, questionCount, questionTypes, difficulty }: GenerateQuestionsRequest = req.body;
 
     if (!files || files.length === 0) {
       return res.status(400).json({
@@ -55,17 +58,12 @@ export const handleGenerateQuestions: RequestHandler = async (req, res) => {
     }
 
     if (!process.env.GEMINI_API_KEY) {
-      console.error("Gemini API key not configured");
-      return res.status(500).json({
-        success: false,
-        questions: [],
-        processingTime: 0,
-        message: "Gemini API key not configured",
-      } as GenerateQuestionsResponse);
+      console.warn("Gemini API key not configured – using fallback questions");
+      throw new Error("GEMINI_API_KEY_MISSING");
     }
 
     console.log(`Generating ${questionCount} questions of types: ${Object.keys(questionTypes).filter(k => questionTypes[k as keyof typeof questionTypes]).join(', ')} at ${difficulty} difficulty`);
-    const startTime = Date.now();
+    // startTime is declared outside the try so it can be used in fallback as well
 
     // For demo purposes, use representative educational content for each file
     // In production, you would integrate with a PDF parsing service
@@ -195,7 +193,7 @@ Educators must continuously update their practices based on current research and
     console.log("Falling back to mock question generation...");
     try {
       const fallbackQuestions = generateFallbackQuestions(questionCount, questionTypes, difficulty, files);
-      const processingTime = Date.now() - (startTime || Date.now());
+      const processingTime = Date.now() - startTime;
 
       res.status(200).json({
         success: true,
